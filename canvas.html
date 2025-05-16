@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Canvas Visualization</title>
+</head>
+
+<body>
+    <canvas id="myCanvas"
+        style="background-color: #cf0a41; display: block; margin: 0 auto; width: 100%; height: auto; max-width: 500px;"></canvas>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let animationStep = 0;
+
+        function resizeCanvas() {
+            const ratio = 470 / 480;
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientWidth / ratio;
+
+            const scaleFactor = canvas.width / 470;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCanvas(scaleFactor);
+            requestAnimationFrame(animate);
+        }
+
+        function drawCanvas(scale) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const centerCircleRadius = 90 * scale;
+            const circleRadius = 55 * scale;
+            const circleDistance = 180 * scale;
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, centerCircleRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#cf0a41';
+            ctx.font = 'bold ' + (40 * scale) + 'px Noto Sans Jp';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ENJN', centerX, centerY);
+
+            const info = [
+                { text: "OPERATIONAL\nSUPPORT", angle: 360 / 7 * 0 - 90, color: "#cf0a41" },
+                { text: "COMMUNICATION\nSUPPORT", angle: 360 / 7 * 1 - 90, color: "#cf0a41" },
+                { text: "SPORTS-TECH", angle: 360 / 7 * 2 - 90, color: "#cf0a41" },
+                { text: "CONSULTING", angle: 360 / 7 * 3 - 90, color: "#f1834c", animated: true },
+                { text: "EDUCATION", angle: 360 / 7 * 4 - 90, color: "#f1834c", animated: true },
+                { text: "DATA\nMARKETING", angle: 360 / 7 * 5 - 90, color: "#cf0a41" },
+                { text: "BRANDING\nPR", angle: 360 / 7 * 6 - 90, color: "#cf0a41" },
+            ];
+
+            const clickableCircles = {};
+
+            info.forEach(({ text, angle, color, animated }) => {
+                const radian = angle * (Math.PI / 180);
+                const x = centerX + circleDistance * Math.cos(radian);
+                const y = centerY + circleDistance * Math.sin(radian);
+
+                const startX = centerX + centerCircleRadius * Math.cos(radian);
+                const startY = centerY + centerCircleRadius * Math.sin(radian);
+
+                if (text === "EDUCATION") {
+                    clickableCircles['EDUCATION'] = { x, y, radius: circleRadius, url: 'https://enjn.co.jp/' };
+                }
+                if (text === "CONSULTING") {
+                    clickableCircles['CONSULTING'] = { x, y, radius: circleRadius, url: 'https://enjn.co.jp/' };
+                }
+
+                ctx.lineWidth = 2; // Set line width to 2 pixels
+
+                ctx.strokeStyle = '#fff';
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                let drawRadius = circleRadius;
+                if (animated) {
+                    const pulse = 1 + 0.1 * Math.sin(animationStep / 20);
+                    drawRadius *= pulse;
+
+                    const opacity = 0.5 + 0.5 * Math.sin(animationStep / 20);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                }
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, drawRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '' + (9 * scale) + 'px Noto Sans Jp';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const lines = text.split('\n');
+                const lineHeight = 16 * scale;
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, x, y - ((lines.length - 1) * lineHeight) / 2 + index * lineHeight);
+                });
+            });
+
+            // Function to check if the mouse is over a circle
+            function isMouseOverCircle(circle, mouseX, mouseY) {
+                const distance = Math.sqrt((mouseX - circle.x) ** 2 + (mouseY - circle.y) ** 2);
+                return distance < circle.radius;
+            }
+
+            // Add mouse move event listener
+            canvas.addEventListener('mousemove', (event) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                let isHovering = false;
+
+                Object.keys(clickableCircles).forEach(circleKey => {
+                    const circle = clickableCircles[circleKey];
+                    if (isMouseOverCircle(circle, mouseX, mouseY)) {
+                        isHovering = true;
+                    }
+                });
+
+                canvas.style.cursor = isHovering ? 'pointer' : 'default';
+            });
+
+            // Add mouse click event listener
+            canvas.addEventListener('click', (event) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                Object.values(clickableCircles).forEach(({ x, y, radius, url }) => {
+                    const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
+                    if (distance < radius) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawCanvas(canvas.width / 470);
+            animationStep++;
+            requestAnimationFrame(animate);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+
+</html>
